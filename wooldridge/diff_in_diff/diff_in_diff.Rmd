@@ -1,0 +1,224 @@
+---
+title: "Introdução a Econometria 6ª Edição - (Wooldridge)"
+subtitle: "**Análise da decisão de políticas com agrupamentos de cortes transversais - Exemplo 13.3**"
+author: "Fábio Rocha | rochaviannafj@gmail.com"
+date: "`r format(Sys.time(), '%d de %B, %Y')`"
+output: pdf_document
+---
+
+## Efeito da localização de um incinerador de lixo sobre os preços dos imóveis.
+
+A ideia geral que o exercício traz é reproduzir uma análise econométrica empreendida por Kiel e McClain no sentido de verificar a influencia da construção de um incinerador numa determinada região da cidade sobre os preços dos imóveis. Wooldridge assume que a análise produzida pelos autores foi um tanto mais sofisticada e complexa mas ele traz de forma mais simples e didática. 
+
+O que se passa é que na cidade de North Andover, no ano de 1978, havia rumores de que um novo incinerador de lixo seria construido por lá. Entretanto, só foi iniciar a construção em 1981. O incinerador iniciou a operação em 1985.
+
+O exercicio então, consiste em avaliar duas amostras de dados, uma de 1978 e outra de 1981, contendo preços e localizações dos imóveis. A hipótese geral é de que imóveis próximos (4,8km) ao incinerador teriam preços mais baixos em relação aos mais distantes.
+
+Começamos então carregando os dados para reproduzir o exercício.^[Há duas formas de carregar os dados: a primeira é carregando a partir do pacote wooldridge, a segunda é indo até o site da Cengage e baixando todos por lá na seção onde se encontra o livro Introdução a Econometria 6ª Edição.]
+
+## Carregamento de pacotes - pacotes necessário para o exercício
+
+```{r, echo=TRUE, eval=TRUE, warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(wooldridge)
+library(stargazer)
+
+```
+
+## Carregar o dado do exercício a partir do pacote wooldridge
+
+```{r, echo=TRUE, eval=TRUE}
+
+data("kielmc")
+
+```
+
+Um analista ingenuo, diz Wooldridge, usaria apenas a amostra para os anos 1981 e estimaria uma Regressão Simples conforme mostramos abaixo.
+
+## Filtrando os dados apenas para 1981
+
+```{r, echo=TRUE, eval=TRUE}
+
+kielmc_1981 <- kielmc %>%
+  filter(year == 1981)
+
+```
+
+## Estimando o modelo de Regressão Linear Simples - 1981
+
+De forma geral o modelo teórico é este:
+
+\begin{align} 
+rprice = \beta_0 + \beta_1 nearinc + \varepsilon \label{eq1} \end{align}
+
+Em que : *rprice* é o preço dos imóveis, *beta zero* o preço médio dos imóveis que não estão próximos ao incinerador, *beta um* o coefiente angular da função e *nearinc* indica a proximidade do imóvel ou não ao incinerador. **nearinc** é uma variável binária e assume 1 se for próximo ao incinerador e 0 se distante.
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc_1981 <- lm(rprice ~ nearinc, kielmc_1981)
+
+stargazer::stargazer(modelo.kielmc_1981,
+                     font.size = 'tiny',
+                     title='Regressão Linear Simples',
+                     header=FALSE)
+
+```
+
+O modelo estimado na tabela, por conter apenas uma variável dependente e binária, mostra o seguinte; O intercepto é preço médio dos imóveis afastados do incinerador, ou seja, o preço médio desses imóveis é de 101.307,5. Já o coeficiente *nearinc* indica que o preço dos imóveis próximos ao incinerador é 30.688,27 a menos do que os que estão distantes do incinerador: 101.307,5 -30.688,27 = 70.619,23
+
+A estatística t é significativa, o que implica dizer que podemos rejeitar com certeza a hipótese de que os preços médios de venda dos imóveis situados próximos do incinerador e daqueles distantes deles sejam os mesmos, diz Wooldridge, e o R quadrado de 0.165 (16,5%) - o que implica dizer que a variabilidade de *nearinc* explica 16.5% da variabilidade de *rprice*.
+
+Infelizmente este modelo simples não implica que a causa dos preços médio de venda dos imoveis próxima do incinerador seja de fato a sua localização. Basta reproduzirmos esse mesmo exercício, mas com o conjunto de dados para 1978, antes da construção do incinerador, para vermos isso, conforme orienta o exercício de Wooldridge.
+
+## Filtrando os dados apenas para 1978
+
+```{r, echo=TRUE, eval=TRUE}
+
+kielmc_1978 <- kielmc %>%
+  filter(year == 1978)
+
+```
+
+## Estimando o modelo de Regressão Linear Simples - 1978
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc_1978 <- lm(rprice ~ nearinc, kielmc_1978)
+
+stargazer::stargazer(modelo.kielmc_1978,
+                     font.size = 'tiny',
+                     title='Regressão Linear Simples',
+                     header=FALSE)
+
+```
+
+Como se vê, mesmo antes de qualquer comentário sobre a construção do incinerador, o preço médio de venda de um imóvel próximo do local já era $18.824,37 menor que um imóvel distante do incinerador, conforme mostra a tabela 2 para o coeficiente *nearinc*. 
+
+## Identificando o efeito sobre o preço
+
+A forma pela qual se verifica como a construção do incinerador reduziu o preço médio de venda dos imóveis próximo, é observando como o coeficiente *nearinc* mudou entre 1978 e 1981. Isto é, a diferença entre as médias 30.688,27 - 18.824,37 = 11.863,9. 
+
+Essa é a estimativa do efeito da construção do incinerador sobre o preço dos imóveis proximos a ele. Esse valor é chamado em economia empírica de **estimador de diferença em diferenças**
+
+Entretanto, precisamos identificar esse valor encontrado é estatisticamente significativo (diferente de zero) precisamos estimar uma nova regressão. Podendo ser assim estimado:
+
+\begin{align} 
+rprice = \beta_0 + \delta_0 y81 + \beta_1 nearinc + \delta_1y81 * nearinc + \varepsilon \label{eq1} \end{align}
+
+Em que :
+
+ - *rprice* é o preço dos imóveis, 
+ - beta_0, intercepto, preço médio de um imóvel distante do incinerador em 1978. 
+ - delta_0 indica as alterações em todos os valores dos imóveis de 1978 a 1981. Variável binária igual a um se 1981 e zero se 1978. 
+ - beta_1 mede o efeito da localização, que não é em razão da presença do incinerador. Variável binária igual a um se for próximo e zero se distante.
+ - Finalmente o parâmetro de interesse é o termo de interaçao entre as variáveis **y81 multiplicado por nearinc**. delta_1 mede o declínio dos valores dos imóveis em razão do novo incinerador, supondo que tanto os imoveis distantes e próximos não tenham sido valorizados por outras razões a taxas diferentes.
+
+## Estimando o modelo com ambos períodos 1978-1981
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc <- lm(rprice ~ y81 + nearinc + y81nrinc, kielmc)
+
+stargazer::stargazer(modelo.kielmc,
+                     font.size = 'tiny',
+                     title='Regressão Linear Multipla',
+                     header=FALSE)
+
+```
+
+O modelo estimado retronou o *intercepto/constante* como significativo; *y81*, que representa a variação média dos dos preços de vendas dos imóveis entre 1978 e 1981, também significativo, e *nearinc*, que indica se o imovel está proximo ou não do incinerador, também significativo. Entretando o delta, que é a interação entre *y81 e nearinc* não foi significativo a 10% - talvez na margem, como diz Wooldridge, seria.
+
+## Inserção de variáveis de controle
+
+Kiel e McClain, diz Wooldridge, inseriram mais variáveis (caracteristicas) dos imóveis em suas análises, por duas razoes. A primeira é que os imóveis vendidos em 1978 podem ter características distintas dos de 1981. Desta forma, inserir mais variaveis que contam com essas caracteristicas podem ser relevantes para **controlar** essas diferenças. Por outro lado, embora tais caracteristicas não apresentem grande relevancia, isto é, não ser tao diferente entre os anos, a inserção dessas caracteristicas pode reduzir a variancia do erro e por sua vez o erro padrão (usado para o calculo da estatística t)
+
+Vejamos como fica o nosso quarto modelo com variáveis de controle. Nesse quarto modelo, controlaremos apenas com a variável idade do imóvel (mais essa variável ao quadrado já que ela consegue capturar o efeito de valorização e desvalorização do imovel ao longo do tempo).
+
+Conforme vemos na tabela 4, a simples inserção da variável *age* (idade do imóvel) já muda siginificativamente o R-quadrado, além do erro padrão e a intensidade do coeficiente *y81.nrinc*, que por sua vez passa ser siginificativo.
+
+\begin{align} 
+rprice = \beta_0 + \delta_0 y81 + \beta_1 nearinc + \delta_1y81 * nearinc + \beta_2 age + \beta_3 age^2 +\varepsilon \label{eq1} \end{align}
+
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc.age <- lm(rprice ~y81 + nearinc + y81nrinc + age + I(age^2), kielmc)
+stargazer::stargazer(modelo.kielmc.age,
+                     font.size = 'tiny',
+                     title='Regressão Linear Multipla',
+                     header=FALSE)
+```
+
+\newpage
+Por fim o quinto modelo inserimos mais variáveis para controlar, conforme consta no exemplo do livro. São inseridos *intst*, distancia até a rodovia estadual, área do terreno *land*, área construída *area*, o número de quartos *rooms* e o número de banheiros *baths*. Essa estimativa contendo essas variáveis de controle produz uma estimativa mais próxima daquela inicial sem nenhum controle.
+
+\begin{align} 
+rprice = \beta_0 + \delta_0 y81 + \beta_1 nearinc + \delta_1y81 * nearinc + \beta_2 intst + 
+\beta_3 land + \beta_4 area + \beta_5 rooms + \nonumber \\ + \beta_6 baths + \beta_7 age + \beta_8 age^2
++\varepsilon \label{eq1} \end{align}
+
+\bigskip
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc.controlado <- lm(rprice ~ y81 + nearinc + 
+                                 y81nrinc + intst + land + area + 
+                                 rooms + baths + age + I(age^2), kielmc)
+
+stargazer(modelo.kielmc.controlado,
+          font.size = 'tiny',
+          title='Regressão Linear Multipla',
+          header=FALSE)
+
+```
+
+As estimativas do modelo 5 são preferidas já que possuem maior controle dos fatores que afetam os preços e possuem menores erro padrão, o que leva a estatistica t e siginificancia estatística dos parametros estimados ser significativa.
+
+Se bem observarmos veremos que o coeficiente *nearinc* diminuiu em relação a modelo anterior e passou a não ser significativo. Isso mostra que as características incluídas no ultimo modelo indicam em grande parte as características dos imóveis mais importantes para determinação dos preços dos imóveis.
+
+\newpage
+
+Vejamos os três modelos juntos numa unica tabela:
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+stargazer(modelo.kielmc, modelo.kielmc.age, modelo.kielmc.controlado,
+          font.size = 'tiny',
+          title='Regressão Linear Multipla',
+          header=FALSE)
+
+```
+
+De fato é possível perceber que depois de controlado, *y81nearinc* teve seu coeficiente aumentado (negativamente) e passou ser siginificativo, enquanto que naquele terceiro modelo isso não acontecia embora tinha valor exatamente ao calculado pelas diferenças de médias dos modelos 1 e 2. Isso significa que de fato a localização próxima ao incinerador teve algum efeito sobre os preços de venda dos imóveis após a construção. E ao que tudo indica o ultimo modelo estimado o número de quartos e banheiros representam um grande peso na formação dos preços de venda. 
+
+\newpage
+## Verificando esse efeito em termos percentuais
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc <- lm(log(rprice) ~ y81 + nearinc + y81nrinc, kielmc)
+
+stargazer::stargazer(modelo.kielmc,
+                     font.size = 'tiny',
+                     title='Regressão Linear Multipla',
+                     header=FALSE)
+
+```
+
+O termo de interação do modeo 3, *y81nearinc* indica a redução percentual aproximada dos imóveis próximos do incinerador. Isso implica dizer que, os imóveis próximos ao incinerador desvalorizaram na média aproximadamente 6,3%. Porém ja vimos que esse coeficiente assim estimado nao é estatisticamente significativo. A forma pela qual contornamos esse problema é controlar por outras variávies (características) do modelo cinco^[Conforme orientação do professor Wooldridge, é necessário colocar as variáveis *intst*, *land* e *area* em log.] 
+
+```{r, echo=TRUE, eval=TRUE, results='asis'}
+
+modelo.kielmc.controlado <- lm(log(price) ~ y81 + nearinc + 
+                                 y81nrinc + log(intst) + log(land) + log(area) + 
+                                 rooms + baths + age + I(age^2), kielmc)
+
+stargazer(modelo.kielmc.controlado,
+          font.size = 'tiny',
+          title='Regressão Linear Multipla',
+          header=FALSE)
+
+```
+
+Assim, é possível constatar que a desvalorização dos imóveis proxímo ao incinerador foi de 13,2% depois de sua construção.
